@@ -447,60 +447,186 @@ async function generateQR(){
   }
 }
 
-async function loadFromQrHash(){
-  if(location.hash.length<=1) return;
-  const hash = location.hash.substring(1);
-  if(!hash.startsWith("p2.")) return;
+function getQrPayload(){
+  let h = location.hash || "";
+  if(h.startsWith("#")) h = h.substring(1);
 
-  await ensureBibleIndex();
-
-  const parts = hash.split(".");
-  const name = base64UrlToUtf8(parts[1] || "");
-  const data = parts[2] || "";
-  document.getElementById("playlistName").value = name;
-  clearRows();
-
-  let pos = 0;
-  let row = 0;
-  while(pos < data.length && row < 20){
-    const kind = data[pos];
-
-    if(kind === "S" && pos + 5 <= data.length){
-      const id = decodeNum(data.substring(pos+1,pos+4));
-      const t = decodeNum(data.substring(pos+4,pos+5))-12;
-      document.getElementById(`type_${row}`).value = "song";
-      await switchType(row);
-      document.getElementById(`id_${row}`).value = id;
-      document.getElementById(`trans_${row}`).value = t;
-      pos += 5;
-      row++;
-      continue;
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      const decoded = decodeURIComponent(h);
+      if(decoded === h) break;
+      h = decoded;
+    }catch(e){
+      break;
     }
-
-    if(kind === "B" && pos + 8 <= data.length){
-      const bookNum = decodeNum(data.substring(pos+1,pos+2));
-      const chapter = decodeNum(data.substring(pos+2,pos+4));
-      const start = decodeNum(data.substring(pos+4,pos+6));
-      const end = decodeNum(data.substring(pos+6,pos+8));
-      const book = getBookByNumberZeroBased(bookNum);
-      document.getElementById(`type_${row}`).value = "bible";
-      await switchType(row);
-      document.getElementById(`book_${row}`).value = book.code;
-      populateChapters(row, chapter);
-      await populateVerses(row, start, end);
-      pos += 8;
-      row++;
-      continue;
-    }
-
-    break;
   }
 
-  setTimeout(async()=>{
-    if(confirm("Chcete stáhnout playlist '"+name+"'?")){
-      await generate();
+  // Když nějaká čtečka QR vloží do hashe celou URL, vytáhneme z ní až skutečný payload.
+  const p2pos = h.indexOf("#p2.");
+  if(p2pos >= 0) h = h.substring(p2pos + 1);
+
+  const p1pos = h.indexOf("#p1.");
+  if(p1pos >= 0) h = h.substring(p1pos + 1);
+
+  const oldNpos = h.indexOf("#n=");
+  if(oldNpos >= 0) h = h.substring(oldNpos + 1);
+
+  return h;
+}
+
+async function loadFromQrHash(){
+  if(location.hash.length<=1) return;
+
+  const hash = getQrPayload();
+  let loadedName = "";
+  let shouldConfirm = false;
+
+  clearRows();
+
+  // Nový formát s Bible/písněmi: #p2.<base64url-nazev>.<data>
+  if(hash.startsWith("p2.")){
+    const firstDot = hash.indexOf(".");
+    const secondDot = hash.indexOf(".", firstDot + 1);
+    if(secondDot < 0) throw new Error("Neplatný QR formát p2");
+
+    loadedName = base64UrlToUtf8(hash.substring(firstDot + 1, secondDot));
+    const data = hash.substring(secondDot + 1);
+
+    document.getElementById("playlistName").value = loadedName;
+
+    let pos = 0;
+    let row = 0;
+
+    while(pos < data.length && row < 20){
+      const kind = data[pos];
+
+      if(kind === "S" && pos + 5 <= data.length){
+        const id = decodeNum(data.substring(pos+1,pos+4));
+        const t = decodeNum(data.substring(pos+4,pos+5))-12;
+
+        document.getElementById(`type_${row}`).value = "song";
+        await switchType(row);
+
+        document.getElementById(`id_${row}`).value = id;
+        document.getElementById(`trans_${row}`).value = t;
+
+        pos += 5;
+        row++;
+        shouldConfirm = true;
+        continue;
+      }
+
+      if(kind === "B" && pos + 8 <= data.length){
+        await ensureBibleIndex();
+
+        const bookNum = decodeNum(data.substring(pos+1,pos+2));
+        const chapter = decodeNum(data.substring(pos+2,pos+4));
+        const start = decodeNum(data.substring(pos+4,pos+6));
+        const end = decodeNum(data.substring(pos+6,pos+8));
+        const book = getBookByNumberZeroBased(bookNum);
+
+        document.getElementById(`type_${row}`).value = "bible";
+        await switchType(row);
+
+        document.getElementById(`book_${row}`).value = book.code;
+        populateChapters(row, chapter);
+        await populateVerses(row, start, end);
+
+        pos += 8;
+        row++;
+        shouldConfirm = true;
+        continue;
+      }
+
+      break;
     }
-  },300);
+  }
+
+  // Starší kompaktní formát: #p1.<base64url-nazev>.<data>
+  else if(hash.startsWith("p1.")){
+    const firstDot = hash.indexOf(".");
+    const secondDot = hash.indexOf(".", firstDot + 1);
+    if(secondDot < 0) throw new Error("Neplatný QR formát p1");
+
+    loadedName = base64UrlToUtf8(hash.substring(firstDot + 1, secondDot));
+    const data = hash.substring(secondDot + 1);
+
+    document.getElementById("playlistName").value = loadedName;
+
+    let pos = 0;
+    let row = 0;
+
+    while(pos+4<=data.length && row<20){
+      const id = decodeNum(data.substring(pos,pos+3));
+      const t = decodeNum(data.substring(pos+3,pos+4))-12;
+
+      document.getElementById(`type_${row}`).value = "song";
+      await switchType(row);
+
+      document.getElementById(`id_${row}`).value = id;
+      document.getElementById(`trans_${row}`).value = t;
+
+      pos += 4;
+      row++;
+      shouldConfirm = true;
+    }
+  }
+
+  // Ještě starší bezpečný formát: #n=nazev&d=data
+  else if(hash.startsWith("n=")){
+    const params = new URLSearchParams(hash);
+    loadedName = params.get("n") || "";
+    const data = params.get("d") || "";
+
+    document.getElementById("playlistName").value = loadedName;
+
+    let pos=0;
+    let row=0;
+
+    while(pos+4<=data.length && row<20){
+      const id = decodeNum(data.substring(pos,pos+3));
+      const t = decodeNum(data.substring(pos+3,pos+4))-12;
+
+      document.getElementById(`type_${row}`).value = "song";
+      await switchType(row);
+
+      document.getElementById(`id_${row}`).value = id;
+      document.getElementById(`trans_${row}`).value = t;
+
+      pos += 4;
+      row++;
+      shouldConfirm = true;
+    }
+  }
+
+  // Úplně původní formát: #nazev|123,0;456,-2
+  else if(hash.includes("|")){
+    const [name, data] = hash.split("|");
+    loadedName = name || "";
+    document.getElementById("playlistName").value = loadedName;
+
+    if(data){
+      const items = data.split(";");
+      items.forEach((item,i)=>{
+        if(i>=20) return;
+        const [id,t] = item.split(",");
+        if(id){
+          document.getElementById(`type_${i}`).value = "song";
+          document.getElementById(`id_${i}`).value = id;
+          document.getElementById(`trans_${i}`).value = t || 0;
+          shouldConfirm = true;
+        }
+      });
+    }
+  }
+
+  if(shouldConfirm){
+    setTimeout(async()=>{
+      if(confirm("Chcete stáhnout playlist '"+loadedName+"'?")){
+        await generate();
+      }
+    },300);
+  }
 }
 
 function clearRows(){
@@ -557,10 +683,17 @@ document.getElementById("fileInput").addEventListener("change",async function(e)
 
 window.addEventListener("load", async ()=>{
   try{
-    await ensureBibleIndex();
+    // QR se musí načíst i tehdy, když ještě není dostupná bible/CSP/index.json.
     await loadFromQrHash();
+
+    // Bible index zkusíme načíst až potom, jen pro vyplnění rozbalovacích seznamů.
+    try{
+      await ensureBibleIndex();
+    }catch(e){
+      console.log("Bible index zatím není dostupný", e);
+    }
   }catch(e){
-    console.log("Bible/QR chyba", e);
+    console.log("QR chyba", e);
   }
 });
 
