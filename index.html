@@ -32,6 +32,8 @@ table { width: 100%; border-collapse: collapse; }
 td, th { border: 1px solid #ccc; padding: 6px; text-align: center; }
 
 input { width: 70px; text-align: center; padding: 4px; }
+select { padding: 8px; border-radius: 10px; max-width: 100%; }
+[id^="bibleBox_"] select { margin: 2px; }
 .name-input { width: 100%; margin-bottom: 10px; padding: 6px; }
 
 button { margin-top: 10px; padding: 12px; width: 100%; font-size: 16px; cursor: pointer; }
@@ -71,7 +73,7 @@ body.dark .theme-btn {
 body.dark { background: #121212; color: white; }
 body.dark .container { background: #1e1e1e; }
 body.dark table, body.dark td, body.dark th { border-color: #555; }
-body.dark input { background: #2a2a2a; color: white; border: 1px solid #555; }
+body.dark input, body.dark select { background: #2a2a2a; color: white; border: 1px solid #555; }
 </style>
 
 <style>
@@ -112,7 +114,7 @@ button:active{
   transform:scale(0.98);
 }
 
-input{
+input,select{
   border:none;
   border-radius:12px;
   padding:12px;
@@ -147,7 +149,7 @@ body.dark button{
 <input id="playlistName" class="name-input" placeholder="např. nedele">
 
 <table>
-<tr><th>#</th><th>ID</th><th>Transp.</th></tr>
+<tr><th>#</th><th>Typ</th><th>Položka</th></tr>
 <tbody id="tableBody"></tbody>
 </table>
 
@@ -162,224 +164,404 @@ body.dark button{
 </div>
 
 <script>
+const tbody = document.getElementById("tableBody");
 
-const BASE64CHARS="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const BIBLE_INDEX_URL = "bible/CSP/index.json";
+let bibleIndex = null;
+let bibleBooks = [];
+const chapterCache = new Map();
 
-function encodeNum(num,length){
-  num=Number(num);
-  if(!Number.isFinite(num) || num<0) num=0;
-  let out="";
-  for(let i=0;i<length;i++){
-    out=BASE64CHARS[num%64]+out;
-    num=Math.floor(num/64);
+const BASE64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+function encodeNum(num, length){
+  num = Number(num) || 0;
+  let out = "";
+  for(let i=0; i<length; i++){
+    out = BASE64CHARS[num % 64] + out;
+    num = Math.floor(num / 64);
   }
   return out;
 }
 
 function decodeNum(str){
-  let n=0;
+  let n = 0;
   for(const ch of str){
-    const v=BASE64CHARS.indexOf(ch);
-    if(v<0) throw new Error("Neplatný znak v QR datech");
-    n=n*64+v;
+    const v = BASE64CHARS.indexOf(ch);
+    if(v < 0) throw new Error("Neplatný znak v QR datech");
+    n = n * 64 + v;
   }
   return n;
 }
 
-function b64UrlEncodeUtf8(text){
-  const bytes=new TextEncoder().encode(text);
-  let bin="";
-  bytes.forEach(b=>bin+=String.fromCharCode(b));
-  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+function utf8ToBase64Url(text){
+  const bytes = new TextEncoder().encode(text || "");
+  let bin = "";
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
 }
 
-function b64UrlDecodeUtf8(str){
-  str=str.replace(/-/g,"+").replace(/_/g,"/");
-  while(str.length%4) str+="=";
-  const bin=atob(str);
-  const bytes=new Uint8Array([...bin].map(ch=>ch.charCodeAt(0)));
+function base64UrlToUtf8(text){
+  let b64 = String(text || "").replace(/-/g,"+").replace(/_/g,"/");
+  while(b64.length % 4) b64 += "=";
+  const bin = atob(b64);
+  const bytes = new Uint8Array([...bin].map(ch => ch.charCodeAt(0)));
   return new TextDecoder().decode(bytes);
 }
 
-function clearPlaylistForm(){
-  for(let i=0;i<20;i++){
-    document.getElementById(`id_${i}`).value="";
-    document.getElementById(`trans_${i}`).value=0;
-  }
-}
-
-const tbody = document.getElementById("tableBody");
-
-for (let i = 0; i < 20; i++) {
+function createRow(i){
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${i+1}</td>
-    <td><input id="id_${i}" type="number" inputmode="numeric"></td>
-    <td><input id="trans_${i}" type="number" inputmode="numeric" value="0"></td>
+    <td>
+      <select id="type_${i}" onchange="switchType(${i})">
+        <option value="song">Píseň</option>
+        <option value="bible">Bible</option>
+      </select>
+    </td>
+    <td>
+      <div id="songBox_${i}">
+        <input id="id_${i}" type="number" inputmode="numeric" placeholder="ID">
+        <input id="trans_${i}" type="number" inputmode="numeric" value="0" title="Transpozice">
+      </div>
+      <div id="bibleBox_${i}" style="display:none">
+        <select id="book_${i}" onchange="onBookChange(${i})"></select>
+        <select id="chapter_${i}" onchange="onChapterChange(${i})"></select>
+        <select id="verseFrom_${i}" onchange="onVerseFromChange(${i})"></select>
+        <select id="verseTo_${i}"></select>
+      </div>
+    </td>
   `;
   tbody.appendChild(row);
 }
 
-function getData(){
+for(let i=0;i<20;i++) createRow(i);
+
+async function ensureBibleIndex(){
+  if(bibleIndex) return bibleIndex;
+  const res = await fetch(BIBLE_INDEX_URL, {cache:"force-cache"});
+  if(!res.ok) throw new Error("Nepodařilo se načíst " + BIBLE_INDEX_URL);
+  bibleIndex = await res.json();
+  bibleBooks = bibleIndex.books || [];
+  populateAllBookSelects();
+  return bibleIndex;
+}
+
+function populateAllBookSelects(){
+  for(let i=0;i<20;i++) populateBookSelect(i);
+}
+
+function populateBookSelect(i){
+  const sel = document.getElementById(`book_${i}`);
+  if(!sel || sel.options.length || !bibleBooks.length) return;
+  sel.innerHTML = bibleBooks.map(b => `<option value="${b.code}">${b.name}</option>`).join("");
+  populateChapters(i);
+}
+
+function getBookByCode(code){
+  return bibleBooks.find(b => b.code === code) || bibleBooks[0];
+}
+
+function getBookByNumberZeroBased(num){
+  return bibleBooks.find(b => Number(b.number) === Number(num)+1) || bibleBooks[0];
+}
+
+function populateChapters(i, selectedChapter){
+  const book = getBookByCode(document.getElementById(`book_${i}`).value);
+  const sel = document.getElementById(`chapter_${i}`);
+  if(!book || !sel) return;
+  const wanted = selectedChapter || sel.value || 1;
+  sel.innerHTML = "";
+  for(let c=1;c<=Number(book.chapters);c++){
+    sel.insertAdjacentHTML("beforeend", `<option value="${c}">${c}</option>`);
+  }
+  sel.value = Math.min(Number(wanted)||1, Number(book.chapters));
+}
+
+async function loadChapter(bookCode, chapter){
+  const key = `${bookCode}/${chapter}`;
+  if(chapterCache.has(key)) return chapterCache.get(key);
+  const url = `bible/CSP/${bookCode}/${chapter}.json`;
+  const res = await fetch(url, {cache:"force-cache"});
+  if(!res.ok) throw new Error("Nepodařilo se načíst " + url);
+  const data = await res.json();
+  chapterCache.set(key, data);
+  return data;
+}
+
+async function populateVerses(i, selectedFrom, selectedTo){
+  const bookCode = document.getElementById(`book_${i}`).value;
+  const chapter = Number(document.getElementById(`chapter_${i}`).value || 1);
+  const data = await loadChapter(bookCode, chapter);
+  const verses = Object.keys(data.verses || {}).map(Number).sort((a,b)=>a-b);
+  const fromSel = document.getElementById(`verseFrom_${i}`);
+  const toSel = document.getElementById(`verseTo_${i}`);
+  fromSel.innerHTML = verses.map(v => `<option value="${v}">${v}</option>`).join("");
+  toSel.innerHTML = verses.map(v => `<option value="${v}">${v}</option>`).join("");
+  fromSel.value = verses.includes(Number(selectedFrom)) ? selectedFrom : verses[0];
+  toSel.value = verses.includes(Number(selectedTo)) ? selectedTo : fromSel.value;
+  fixVerseOrder(i);
+}
+
+function fixVerseOrder(i){
+  const fromSel = document.getElementById(`verseFrom_${i}`);
+  const toSel = document.getElementById(`verseTo_${i}`);
+  if(Number(toSel.value) < Number(fromSel.value)) toSel.value = fromSel.value;
+}
+
+async function switchType(i){
+  const type = document.getElementById(`type_${i}`).value;
+  document.getElementById(`songBox_${i}`).style.display = type === "song" ? "block" : "none";
+  document.getElementById(`bibleBox_${i}`).style.display = type === "bible" ? "block" : "none";
+  if(type === "bible"){
+    await ensureBibleIndex();
+    populateBookSelect(i);
+    await populateVerses(i);
+  }
+}
+
+async function onBookChange(i){
+  populateChapters(i, 1);
+  await populateVerses(i, 1, 1);
+}
+
+async function onChapterChange(i){
+  await populateVerses(i, 1, 1);
+}
+
+function onVerseFromChange(i){
+  fixVerseOrder(i);
+}
+
+async function getBibleText(bookCode, chapter, from, to){
+  const data = await loadChapter(bookCode, chapter);
+  const chunks = [];
+  for(let v=Number(from); v<=Number(to); v++){
+    if(data.verses && data.verses[String(v)]) chunks.push(data.verses[String(v)]);
+  }
+  return chunks.join(" ");
+}
+
+async function getData(){
   const name = document.getElementById("playlistName").value || "playlist";
   const records=[];
+
   for(let i=0;i<20;i++){
-    const id=document.getElementById(`id_${i}`).value.trim();
-    const t=document.getElementById(`trans_${i}`).value.trim();
-    if(id!==""){
-      records.push({rank:i,song_lyric:{id:parseInt(id),transposition:parseInt(t||0)}});
+    const type = document.getElementById(`type_${i}`).value;
+
+    if(type === "song"){
+      const id=document.getElementById(`id_${i}`).value.trim();
+      const t=document.getElementById(`trans_${i}`).value.trim();
+      if(id!==""){
+        records.push({
+          rank:i,
+          song_lyric:{
+            id:parseInt(id),
+            accidentals:null,
+            transposition:parseInt(t||0)
+          }
+        });
+      }
+    }
+
+    if(type === "bible"){
+      await ensureBibleIndex();
+      const bookCode = document.getElementById(`book_${i}`).value;
+      const book = getBookByCode(bookCode);
+      const chapter = Number(document.getElementById(`chapter_${i}`).value);
+      const start = Number(document.getElementById(`verseFrom_${i}`).value);
+      const end = Number(document.getElementById(`verseTo_${i}`).value);
+
+      if(book && chapter && start && end){
+        const text = await getBibleText(bookCode, chapter, start, end);
+        records.push({
+          rank:i,
+          bible_verse:{
+            book:Number(book.number)-1,
+            chapter:chapter,
+            start_verse:start,
+            end_verse:end,
+            text:text
+          }
+        });
+      }
     }
   }
+
   return {name,records};
 }
 
-function generate(){
-  const data=getData();
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/octet-stream"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download=data.name+".proscholy";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+async function generate(){
+  try{
+    const data=await getData();
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/octet-stream"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=data.name+".proscholy";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(err){
+    alert("Nepodařilo se vytvořit playlist: " + err.message);
+  }
 }
 
-function generateQR(){
-  const name=document.getElementById("playlistName").value||"playlist";
+function encodeQrRecord(i){
+  const type = document.getElementById(`type_${i}`).value;
 
-  let packed="";
-
-  for(let i=0;i<20;i++){
+  if(type === "song"){
     const id=document.getElementById(`id_${i}`).value.trim();
-    const t=parseInt(document.getElementById(`trans_${i}`).value||0,10);
+    const t=parseInt(document.getElementById(`trans_${i}`).value||0);
+    if(id!=="") return "S" + encodeNum(parseInt(id),3) + encodeNum(t+12,1);
+  }
 
-    if(id!==""){
-      const idNum=parseInt(id,10);
-      if(Number.isFinite(idNum)){
-        packed+=encodeNum(idNum,3);
-        packed+=encodeNum((Number.isFinite(t)?t:0)+12,1);
-      }
+  if(type === "bible"){
+    const bookCode = document.getElementById(`book_${i}`).value;
+    const book = getBookByCode(bookCode);
+    const chapter = Number(document.getElementById(`chapter_${i}`).value);
+    const start = Number(document.getElementById(`verseFrom_${i}`).value);
+    const end = Number(document.getElementById(`verseTo_${i}`).value);
+    if(book && chapter && start && end){
+      return "B" + encodeNum(Number(book.number)-1,1) + encodeNum(chapter,2) + encodeNum(start,2) + encodeNum(end,2);
     }
   }
 
-  // Jednoznačný nový formát:
-  // #p1.<nazev_playlistu_v_base64url>.<písně_po_4_znacích>
-  // Díky prefixu p1 si stránka nikdy nesplete název s celou URL.
-  const payload="p1."+b64UrlEncodeUtf8(name)+"."+packed;
-  const url=location.origin+location.pathname+"#"+payload;
-
-  const div=document.getElementById("qrcode");
-  div.innerHTML="";
-  QRCode.toCanvas(url,{width:220},(err,canvas)=>{ if(!err) div.appendChild(canvas); });
+  return "";
 }
 
-window.onload=()=>{
-  if(location.hash.length>1){
-    try{
-      const hash=location.hash.substring(1);
+async function generateQR(){
+  try{
+    await ensureBibleIndex();
+    const name=document.getElementById("playlistName").value||"playlist";
+    let packed="";
+    for(let i=0;i<20;i++) packed += encodeQrRecord(i);
 
-      clearPlaylistForm();
+    const url=location.origin+location.pathname+"#p2."+utf8ToBase64Url(name)+"."+packed;
 
-      // Nový bezpečný formát: #p1.<base64url_nazev>.<kompaktni_data>
-      if(hash.startsWith("p1.")){
-        const firstDot=hash.indexOf(".",3);
-        const namePart=hash.substring(3, firstDot);
-        const data=hash.substring(firstDot+1);
-
-        const name=b64UrlDecodeUtf8(namePart);
-        document.getElementById("playlistName").value=name||"";
-
-        let pos=0;
-        let row=0;
-
-        while(pos+4<=data.length && row<20){
-          const id=decodeNum(data.substring(pos,pos+3));
-          const t=decodeNum(data.substring(pos+3,pos+4))-12;
-
-          document.getElementById(`id_${row}`).value=id;
-          document.getElementById(`trans_${row}`).value=t;
-
-          pos+=4;
-          row++;
-        }
-
-        setTimeout(()=>{
-          if(confirm("Chcete stáhnout playlist '"+name+"'?")){
-            generate();
-          }
-        },300);
-
-        return;
-      }
-
-      // Zpětná kompatibilita se starým formátem: #nazev|123,0;456,-2
-      const decoded=decodeURIComponent(hash);
-      const pipeIndex=decoded.indexOf("|");
-
-      if(pipeIndex>=0){
-        const name=decoded.substring(0,pipeIndex);
-        const data=decoded.substring(pipeIndex+1);
-
-        document.getElementById("playlistName").value=name||"";
-
-        if(data){
-          const items=data.split(";");
-          items.forEach((item,i)=>{
-            if(i>=20) return;
-            const [id,t]=item.split(",");
-            if(id){
-              document.getElementById(`id_${i}`).value=id;
-              document.getElementById(`trans_${i}`).value=t||0;
-            }
-          });
-        }
-
-        setTimeout(()=>{
-          if(confirm("Chcete stáhnout playlist '"+name+"'?")){
-            generate();
-          }
-        },300);
-      }
-
-    }catch(e){
-      console.log("QR chyba", e);
-    }
+    const div=document.getElementById("qrcode");
+    div.innerHTML="";
+    QRCode.toCanvas(url,{width:220},(err,canvas)=>{ if(!err) div.appendChild(canvas); });
+  }catch(err){
+    alert("Nepodařilo se vytvořit QR: " + err.message);
   }
-};
+}
 
-document.getElementById("fileInput").addEventListener("change",function(e){
+async function loadFromQrHash(){
+  if(location.hash.length<=1) return;
+  const hash = location.hash.substring(1);
+  if(!hash.startsWith("p2.")) return;
+
+  await ensureBibleIndex();
+
+  const parts = hash.split(".");
+  const name = base64UrlToUtf8(parts[1] || "");
+  const data = parts[2] || "";
+  document.getElementById("playlistName").value = name;
+  clearRows();
+
+  let pos = 0;
+  let row = 0;
+  while(pos < data.length && row < 20){
+    const kind = data[pos];
+
+    if(kind === "S" && pos + 5 <= data.length){
+      const id = decodeNum(data.substring(pos+1,pos+4));
+      const t = decodeNum(data.substring(pos+4,pos+5))-12;
+      document.getElementById(`type_${row}`).value = "song";
+      await switchType(row);
+      document.getElementById(`id_${row}`).value = id;
+      document.getElementById(`trans_${row}`).value = t;
+      pos += 5;
+      row++;
+      continue;
+    }
+
+    if(kind === "B" && pos + 8 <= data.length){
+      const bookNum = decodeNum(data.substring(pos+1,pos+2));
+      const chapter = decodeNum(data.substring(pos+2,pos+4));
+      const start = decodeNum(data.substring(pos+4,pos+6));
+      const end = decodeNum(data.substring(pos+6,pos+8));
+      const book = getBookByNumberZeroBased(bookNum);
+      document.getElementById(`type_${row}`).value = "bible";
+      await switchType(row);
+      document.getElementById(`book_${row}`).value = book.code;
+      populateChapters(row, chapter);
+      await populateVerses(row, start, end);
+      pos += 8;
+      row++;
+      continue;
+    }
+
+    break;
+  }
+
+  setTimeout(async()=>{
+    if(confirm("Chcete stáhnout playlist '"+name+"'?")){
+      await generate();
+    }
+  },300);
+}
+
+function clearRows(){
+  for(let i=0;i<20;i++){
+    document.getElementById(`type_${i}`).value = "song";
+    document.getElementById(`songBox_${i}`).style.display = "block";
+    document.getElementById(`bibleBox_${i}`).style.display = "none";
+    document.getElementById(`id_${i}`).value = "";
+    document.getElementById(`trans_${i}`).value = 0;
+  }
+}
+
+document.getElementById("fileInput").addEventListener("change",async function(e){
   const file=e.target.files[0];
   if(!file) return;
 
   const reader=new FileReader();
-  reader.onload=function(ev){
+  reader.onload=async function(ev){
     try{
+      await ensureBibleIndex();
       const data=JSON.parse(ev.target.result);
-
-      for(let i=0;i<20;i++){
-        document.getElementById(`id_${i}`).value="";
-        document.getElementById(`trans_${i}`).value=0;
-      }
-
+      clearRows();
       document.getElementById("playlistName").value=data.name||"";
 
-      data.records.forEach(r=>{
-        const i=r.rank;
-        if(i<20){
-          document.getElementById(`id_${i}`).value=r.song_lyric.id;
-          document.getElementById(`trans_${i}`).value=r.song_lyric.transposition ?? 0;
-        }
-      });
+      for(const r of (data.records || [])){
+        const i = Number(r.rank);
+        if(i<0 || i>=20) continue;
 
-      generateQR();
+        if(r.song_lyric){
+          document.getElementById(`type_${i}`).value = "song";
+          await switchType(i);
+          document.getElementById(`id_${i}`).value = r.song_lyric.id ?? "";
+          document.getElementById(`trans_${i}`).value = r.song_lyric.transposition ?? 0;
+        }
+
+        if(r.bible_verse){
+          const book = getBookByNumberZeroBased(r.bible_verse.book ?? 0);
+          document.getElementById(`type_${i}`).value = "bible";
+          await switchType(i);
+          document.getElementById(`book_${i}`).value = book.code;
+          populateChapters(i, r.bible_verse.chapter || 1);
+          await populateVerses(i, r.bible_verse.start_verse || 1, r.bible_verse.end_verse || r.bible_verse.start_verse || 1);
+        }
+      }
+
+      await generateQR();
 
     }catch(err){
-      alert("Nepodařilo se načíst soubor");
+      alert("Nepodařilo se načíst soubor: " + err.message);
     }
   };
   reader.readAsText(file);
+});
+
+window.addEventListener("load", async ()=>{
+  try{
+    await ensureBibleIndex();
+    await loadFromQrHash();
+  }catch(e){
+    console.log("Bible/QR chyba", e);
+  }
 });
 
 const toggle = document.getElementById("themeToggle");
