@@ -44,9 +44,15 @@ body.dark{--bg:#121212;--card:#1e1e1e;--primary:#2f2f2f;--primary-soft:#2a2a2a;-
 const BASE64CHARS="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 const ROWS=20;
 const DIRECT_URL_LIMIT=1700; // do této délky necháme celý playlist přímo v URL/QR
-const FIREBASE_CONFIG={
-  // SEM VLOŽ SVŮJ FIREBASE CONFIG, např.:
-  // apiKey:"...", authDomain:"...", databaseURL:"https://...firebaseio.com", projectId:"...", appId:"..."
+const firebaseConfig = {
+  apiKey: "AIzaSyB9cERfEFvfp9BNXZoyB1H96Ji_qvHgBTc",
+  authDomain: "piskvorky-web.firebaseapp.com",
+  databaseURL: "https://piskvorky-web-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "piskvorky-web",
+  storageBucket: "piskvorky-web.firebasestorage.app",
+  messagingSenderId: "880043390902",
+  appId: "1:880043390902:web:ddf6db7a184e15c4d3b317",
+  measurementId: "G-D52KCD9J8S"
 };
 const FIREBASE_PATH="sharedPlaylists";
 const FIREBASE_TTL_MS=24*60*60*1000; // Firebase playlisty expirují po 24 hodinách
