@@ -1,0 +1,538 @@
+{
+  "translation": "CSP",
+  "name": "Český studijní překlad",
+  "source_module": "CzeCSP SWORD module",
+  "license": "Creative Commons BY-NC-ND 4.0",
+  "copyright_holder": "Nakladatelství KMS, s.r.o",
+  "copyright_notice": "Český studijní překlad © Nakladatelství KMS, s.r.o. Licence: Creative Commons BY-NC-ND 4.0. Pouze nekomerční použití, bez úprav textu, s uvedením licence.",
+  "books": [
+    {
+      "number": 1,
+      "code": "GEN",
+      "name": "Genesis",
+      "abbr": "Gn",
+      "chapters": 50,
+      "path": "bible/CSP/GEN/"
+    },
+    {
+      "number": 2,
+      "code": "EXO",
+      "name": "Exodus",
+      "abbr": "Ex",
+      "chapters": 40,
+      "path": "bible/CSP/EXO/"
+    },
+    {
+      "number": 3,
+      "code": "LEV",
+      "name": "Leviticus",
+      "abbr": "Lv",
+      "chapters": 27,
+      "path": "bible/CSP/LEV/"
+    },
+    {
+      "number": 4,
+      "code": "NUM",
+      "name": "Numeri",
+      "abbr": "Nu",
+      "chapters": 36,
+      "path": "bible/CSP/NUM/"
+    },
+    {
+      "number": 5,
+      "code": "DEU",
+      "name": "Deuteronomium",
+      "abbr": "Dt",
+      "chapters": 34,
+      "path": "bible/CSP/DEU/"
+    },
+    {
+      "number": 6,
+      "code": "JOS",
+      "name": "Jozue",
+      "abbr": "Joz",
+      "chapters": 24,
+      "path": "bible/CSP/JOS/"
+    },
+    {
+      "number": 7,
+      "code": "JDG",
+      "name": "Soudců",
+      "abbr": "Sd",
+      "chapters": 21,
+      "path": "bible/CSP/JDG/"
+    },
+    {
+      "number": 8,
+      "code": "RUT",
+      "name": "Rút",
+      "abbr": "Rt",
+      "chapters": 4,
+      "path": "bible/CSP/RUT/"
+    },
+    {
+      "number": 9,
+      "code": "1SA",
+      "name": "1. Samuelova",
+      "abbr": "1S",
+      "chapters": 31,
+      "path": "bible/CSP/1SA/"
+    },
+    {
+      "number": 10,
+      "code": "2SA",
+      "name": "2. Samuelova",
+      "abbr": "2S",
+      "chapters": 24,
+      "path": "bible/CSP/2SA/"
+    },
+    {
+      "number": 11,
+      "code": "1KI",
+      "name": "1. Královská",
+      "abbr": "1Kr",
+      "chapters": 22,
+      "path": "bible/CSP/1KI/"
+    },
+    {
+      "number": 12,
+      "code": "2KI",
+      "name": "2. Královská",
+      "abbr": "2Kr",
+      "chapters": 25,
+      "path": "bible/CSP/2KI/"
+    },
+    {
+      "number": 13,
+      "code": "1CH",
+      "name": "1. Paralipomenon",
+      "abbr": "1Pa",
+      "chapters": 29,
+      "path": "bible/CSP/1CH/"
+    },
+    {
+      "number": 14,
+      "code": "2CH",
+      "name": "2. Paralipomenon",
+      "abbr": "2Pa",
+      "chapters": 36,
+      "path": "bible/CSP/2CH/"
+    },
+    {
+      "number": 15,
+      "code": "EZR",
+      "name": "Ezdráš",
+      "abbr": "Ezd",
+      "chapters": 10,
+      "path": "bible/CSP/EZR/"
+    },
+    {
+      "number": 16,
+      "code": "NEH",
+      "name": "Nehemjáš",
+      "abbr": "Neh",
+      "chapters": 13,
+      "path": "bible/CSP/NEH/"
+    },
+    {
+      "number": 17,
+      "code": "EST",
+      "name": "Ester",
+      "abbr": "Est",
+      "chapters": 10,
+      "path": "bible/CSP/EST/"
+    },
+    {
+      "number": 18,
+      "code": "JOB",
+      "name": "Jób",
+      "abbr": "Jb",
+      "chapters": 42,
+      "path": "bible/CSP/JOB/"
+    },
+    {
+      "number": 19,
+      "code": "PSA",
+      "name": "Žalmy",
+      "abbr": "Ž",
+      "chapters": 150,
+      "path": "bible/CSP/PSA/"
+    },
+    {
+      "number": 20,
+      "code": "PRO",
+      "name": "Přísloví",
+      "abbr": "Př",
+      "chapters": 31,
+      "path": "bible/CSP/PRO/"
+    },
+    {
+      "number": 21,
+      "code": "ECC",
+      "name": "Kazatel",
+      "abbr": "Kaz",
+      "chapters": 12,
+      "path": "bible/CSP/ECC/"
+    },
+    {
+      "number": 22,
+      "code": "SNG",
+      "name": "Píseň písní",
+      "abbr": "Pís",
+      "chapters": 8,
+      "path": "bible/CSP/SNG/"
+    },
+    {
+      "number": 23,
+      "code": "ISA",
+      "name": "Izajáš",
+      "abbr": "Iz",
+      "chapters": 66,
+      "path": "bible/CSP/ISA/"
+    },
+    {
+      "number": 24,
+      "code": "JER",
+      "name": "Jeremjáš",
+      "abbr": "Jr",
+      "chapters": 52,
+      "path": "bible/CSP/JER/"
+    },
+    {
+      "number": 25,
+      "code": "LAM",
+      "name": "Pláč",
+      "abbr": "Pl",
+      "chapters": 5,
+      "path": "bible/CSP/LAM/"
+    },
+    {
+      "number": 26,
+      "code": "EZK",
+      "name": "Ezechiel",
+      "abbr": "Ez",
+      "chapters": 48,
+      "path": "bible/CSP/EZK/"
+    },
+    {
+      "number": 27,
+      "code": "DAN",
+      "name": "Daniel",
+      "abbr": "Da",
+      "chapters": 12,
+      "path": "bible/CSP/DAN/"
+    },
+    {
+      "number": 28,
+      "code": "HOS",
+      "name": "Ozeáš",
+      "abbr": "Oz",
+      "chapters": 14,
+      "path": "bible/CSP/HOS/"
+    },
+    {
+      "number": 29,
+      "code": "JOL",
+      "name": "Jóel",
+      "abbr": "Jl",
+      "chapters": 3,
+      "path": "bible/CSP/JOL/"
+    },
+    {
+      "number": 30,
+      "code": "AMO",
+      "name": "Ámos",
+      "abbr": "Am",
+      "chapters": 9,
+      "path": "bible/CSP/AMO/"
+    },
+    {
+      "number": 31,
+      "code": "OBA",
+      "name": "Abdijáš",
+      "abbr": "Abd",
+      "chapters": 1,
+      "path": "bible/CSP/OBA/"
+    },
+    {
+      "number": 32,
+      "code": "JON",
+      "name": "Jonáš",
+      "abbr": "Jon",
+      "chapters": 4,
+      "path": "bible/CSP/JON/"
+    },
+    {
+      "number": 33,
+      "code": "MIC",
+      "name": "Micheáš",
+      "abbr": "Mi",
+      "chapters": 7,
+      "path": "bible/CSP/MIC/"
+    },
+    {
+      "number": 34,
+      "code": "NAM",
+      "name": "Nahum",
+      "abbr": "Na",
+      "chapters": 3,
+      "path": "bible/CSP/NAM/"
+    },
+    {
+      "number": 35,
+      "code": "HAB",
+      "name": "Abakuk",
+      "abbr": "Abk",
+      "chapters": 3,
+      "path": "bible/CSP/HAB/"
+    },
+    {
+      "number": 36,
+      "code": "ZEP",
+      "name": "Sofonjáš",
+      "abbr": "Sf",
+      "chapters": 3,
+      "path": "bible/CSP/ZEP/"
+    },
+    {
+      "number": 37,
+      "code": "HAG",
+      "name": "Ageus",
+      "abbr": "Ag",
+      "chapters": 2,
+      "path": "bible/CSP/HAG/"
+    },
+    {
+      "number": 38,
+      "code": "ZEC",
+      "name": "Zacharjáš",
+      "abbr": "Za",
+      "chapters": 14,
+      "path": "bible/CSP/ZEC/"
+    },
+    {
+      "number": 39,
+      "code": "MAL",
+      "name": "Malachiáš",
+      "abbr": "Mal",
+      "chapters": 4,
+      "path": "bible/CSP/MAL/"
+    },
+    {
+      "number": 40,
+      "code": "MAT",
+      "name": "Matouš",
+      "abbr": "Mt",
+      "chapters": 28,
+      "path": "bible/CSP/MAT/"
+    },
+    {
+      "number": 41,
+      "code": "MRK",
+      "name": "Marek",
+      "abbr": "Mk",
+      "chapters": 16,
+      "path": "bible/CSP/MRK/"
+    },
+    {
+      "number": 42,
+      "code": "LUK",
+      "name": "Lukáš",
+      "abbr": "L",
+      "chapters": 24,
+      "path": "bible/CSP/LUK/"
+    },
+    {
+      "number": 43,
+      "code": "JHN",
+      "name": "Jan",
+      "abbr": "J",
+      "chapters": 21,
+      "path": "bible/CSP/JHN/"
+    },
+    {
+      "number": 44,
+      "code": "ACT",
+      "name": "Skutky",
+      "abbr": "Sk",
+      "chapters": 28,
+      "path": "bible/CSP/ACT/"
+    },
+    {
+      "number": 45,
+      "code": "ROM",
+      "name": "Římanům",
+      "abbr": "Ř",
+      "chapters": 16,
+      "path": "bible/CSP/ROM/"
+    },
+    {
+      "number": 46,
+      "code": "1CO",
+      "name": "1. Korintským",
+      "abbr": "1K",
+      "chapters": 16,
+      "path": "bible/CSP/1CO/"
+    },
+    {
+      "number": 47,
+      "code": "2CO",
+      "name": "2. Korintským",
+      "abbr": "2K",
+      "chapters": 13,
+      "path": "bible/CSP/2CO/"
+    },
+    {
+      "number": 48,
+      "code": "GAL",
+      "name": "Galatským",
+      "abbr": "Ga",
+      "chapters": 6,
+      "path": "bible/CSP/GAL/"
+    },
+    {
+      "number": 49,
+      "code": "EPH",
+      "name": "Efeským",
+      "abbr": "Ef",
+      "chapters": 6,
+      "path": "bible/CSP/EPH/"
+    },
+    {
+      "number": 50,
+      "code": "PHP",
+      "name": "Filipským",
+      "abbr": "Fp",
+      "chapters": 4,
+      "path": "bible/CSP/PHP/"
+    },
+    {
+      "number": 51,
+      "code": "COL",
+      "name": "Koloským",
+      "abbr": "Ko",
+      "chapters": 4,
+      "path": "bible/CSP/COL/"
+    },
+    {
+      "number": 52,
+      "code": "1TH",
+      "name": "1. Tesalonickým",
+      "abbr": "1Te",
+      "chapters": 5,
+      "path": "bible/CSP/1TH/"
+    },
+    {
+      "number": 53,
+      "code": "2TH",
+      "name": "2. Tesalonickým",
+      "abbr": "2Te",
+      "chapters": 3,
+      "path": "bible/CSP/2TH/"
+    },
+    {
+      "number": 54,
+      "code": "1TI",
+      "name": "1. Timoteovi",
+      "abbr": "1Tm",
+      "chapters": 6,
+      "path": "bible/CSP/1TI/"
+    },
+    {
+      "number": 55,
+      "code": "2TI",
+      "name": "2. Timoteovi",
+      "abbr": "2Tm",
+      "chapters": 4,
+      "path": "bible/CSP/2TI/"
+    },
+    {
+      "number": 56,
+      "code": "TIT",
+      "name": "Titovi",
+      "abbr": "Tt",
+      "chapters": 3,
+      "path": "bible/CSP/TIT/"
+    },
+    {
+      "number": 57,
+      "code": "PHM",
+      "name": "Filemonovi",
+      "abbr": "Fm",
+      "chapters": 1,
+      "path": "bible/CSP/PHM/"
+    },
+    {
+      "number": 58,
+      "code": "HEB",
+      "name": "Hebrejům",
+      "abbr": "He",
+      "chapters": 13,
+      "path": "bible/CSP/HEB/"
+    },
+    {
+      "number": 59,
+      "code": "JAS",
+      "name": "Jakubův",
+      "abbr": "Jk",
+      "chapters": 5,
+      "path": "bible/CSP/JAS/"
+    },
+    {
+      "number": 60,
+      "code": "1PE",
+      "name": "1. Petrův",
+      "abbr": "1Pt",
+      "chapters": 5,
+      "path": "bible/CSP/1PE/"
+    },
+    {
+      "number": 61,
+      "code": "2PE",
+      "name": "2. Petrův",
+      "abbr": "2Pt",
+      "chapters": 3,
+      "path": "bible/CSP/2PE/"
+    },
+    {
+      "number": 62,
+      "code": "1JN",
+      "name": "1. Janův",
+      "abbr": "1J",
+      "chapters": 5,
+      "path": "bible/CSP/1JN/"
+    },
+    {
+      "number": 63,
+      "code": "2JN",
+      "name": "2. Janův",
+      "abbr": "2J",
+      "chapters": 1,
+      "path": "bible/CSP/2JN/"
+    },
+    {
+      "number": 64,
+      "code": "3JN",
+      "name": "3. Janův",
+      "abbr": "3J",
+      "chapters": 1,
+      "path": "bible/CSP/3JN/"
+    },
+    {
+      "number": 65,
+      "code": "JUD",
+      "name": "Judův",
+      "abbr": "Ju",
+      "chapters": 1,
+      "path": "bible/CSP/JUD/"
+    },
+    {
+      "number": 66,
+      "code": "REV",
+      "name": "Zjevení",
+      "abbr": "Zj",
+      "chapters": 22,
+      "path": "bible/CSP/REV/"
+    }
+  ]
+}
