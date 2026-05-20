@@ -35,7 +35,6 @@ body.dark{--bg:#121212;--card:#1e1e1e;--primary:#2f2f2f;--primary-soft:#2a2a2a;-
 <thead><tr><th>#</th><th>Typ</th><th>Obsah</th><th>Transp.</th></tr></thead>
 <tbody id="tableBody"></tbody>
 </table>
-<div class="small-info">Text se do souboru uloží jako <code>custom_text</code> ve formátu ProScholy. Biblický úryvek se v QR/Firebase ukládá jen jako souřadnice a text se při načtení doplní z lokálních souborů <code>bible/CSP</code>. Krátké playlisty se ukládají přímo do URL jako <code>#p3</code>. Pokud je URL moc dlouhá pro spolehlivý QR kód, aplikace uloží data do Firebase Realtime Database a QR obsahuje jen krátký odkaz <code>#s.kód</code>. Firebase playlisty se po 24 hodinách při pokusu o načtení automaticky smažou.</div>
 <button onclick="generate()">Stáhnout .proscholy</button>
 <button onclick="generateQR()">Sdílet přes QR</button>
 <input type="file" id="fileInput" accept=".proscholy" style="display:none">
