@@ -283,16 +283,37 @@ async function generateQR(){
     let url=location.origin+location.pathname+"#"+direct.kind+"."+direct.payload;
     let mode="direct";
 
-    if(url.length>DIRECT_URL_LIMIT){
-      if(!isFirebaseConfigured()){
-        share.textContent="URL má "+url.length+" znaků, což je na QR moc. Firebase zatím není nastavený v FIREBASE_CONFIG.";
-        alert("Playlist je moc dlouhý pro přímý QR odkaz. Vlož Firebase config do souboru, pak se dlouhé playlisty uloží přes krátký kód.");
-      }else{
-        const code=await saveSharedPlaylist(direct.kind+"."+direct.payload);
-        url=location.origin+location.pathname+"#s."+code;
-        mode="firebase";
-      }
-    }
+if(url.length>DIRECT_URL_LIMIT){
+
+  const souhlas = confirm(
+`Playlist je příliš dlouhý pro přímé vložení do QR kódu nebo URL.
+
+Aplikace proto dočasně uloží data playlistu na Firebase Realtime Database (Google),
+aby mohla vytvořit krátký sdílecí odkaz.
+
+Uložená data:
+• slouží pouze pro sdílení playlistu
+• nejsou veřejně indexována
+• nejsou poskytována třetím stranám
+• po 24 hodinách se automaticky smažou
+
+Souhlasíte s tímto dočasným uložením dat?`
+  );
+
+  if(!souhlas){
+    share.textContent="Vytvoření QR kódu bylo zrušeno.";
+    return;
+  }
+
+  if(!isFirebaseConfigured()){
+    share.textContent="URL má "+url.length+" znaků, což je na QR moc. Firebase zatím není nastavený v FIREBASE_CONFIG.";
+    alert("Playlist je moc dlouhý pro přímý QR odkaz. Vlož Firebase config do souboru, pak se dlouhé playlisty uloží přes krátký kód.");
+  }else{
+    const code=await saveSharedPlaylist(direct.kind+"."+direct.payload);
+    url=location.origin+location.pathname+"#s."+code;
+    mode="firebase";
+  }
+}
 
     share.textContent=(mode==="firebase"?"Krátký Firebase odkaz: ":"Přímý URL odkaz: ")+url;
     QRCode.toCanvas(url,{width:220,errorCorrectionLevel:"M"},(err,canvas)=>{
