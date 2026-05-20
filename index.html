@@ -37,8 +37,7 @@ body.dark{--bg:#121212;--card:#1e1e1e;--primary:#2f2f2f;--primary-soft:#2a2a2a;-
 </table>
 <button onclick="generate()">Stáhnout .proscholy</button>
 <button onclick="generateQR()">Sdílet přes QR</button>
-<input type="file" id="fileInput" accept=".proscholy" style="display:none">
-<button onclick="document.getElementById('fileInput').click()">Načíst .proscholy</button>
+<button onclick="copyPlaylistLink()">Zkopírovat odkaz playlistu</button>
 <div id="qrcode"></div><div id="shareUrl" class="share-url"></div>
 <div class="bible-license">Český studijní překlad © Nakladatelství KMS, s.r.o. Licence: Creative Commons BY-NC-ND 4.0. Pouze nekomerční použití, bez úprav textu, s uvedením licence.</div>
 </div>
@@ -325,6 +324,71 @@ Souhlasíte s tímto dočasným uložením dat?`
     alert("Nepodařilo se vytvořit sdílený odkaz: "+err.message);
   }
 }
+async function copyPlaylistLink(){
+
+  try{
+    const direct = await buildDirectPayload();
+
+    let url =
+      location.origin +
+      location.pathname +
+      "#" +
+      direct.kind +
+      "." +
+      direct.payload;
+
+    if(url.length > DIRECT_URL_LIMIT){
+
+      const souhlas = confirm(
+`Playlist je příliš dlouhý pro přímé vložení do URL.
+
+Aplikace proto dočasně uloží data playlistu na Firebase Realtime Database (Google),
+aby mohla vytvořit krátký sdílecí odkaz.
+
+Uložená data:
+• slouží pouze pro sdílení playlistu
+• nejsou veřejně indexována
+• nejsou poskytována třetím stranám
+• po 24 hodinách se automaticky smažou
+
+Souhlasíte s tímto dočasným uložením dat?`
+      );
+
+      if(!souhlas){
+        return;
+      }
+
+      if(!isFirebaseConfigured()){
+        alert("Playlist je příliš dlouhý a Firebase není nastavený.");
+        return;
+      }
+
+      const code = await saveSharedPlaylist(
+        direct.kind + "." + direct.payload
+      );
+
+      url =
+        location.origin +
+        location.pathname +
+        "#s." +
+        code;
+    }
+
+    await navigator.clipboard.writeText(url);
+
+    alert("Odkaz playlistu byl zkopírován.");
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Nepodařilo se zkopírovat odkaz: " +
+      err.message
+    );
+  }
+}
+  
 async function fillFromData(data){clearPlaylistForm();document.getElementById("playlistName").value=data.name||"";const pending=[];(data.records||[]).forEach((r,idx)=>{const i=idx;if(i>=ROWS)return;if(r.song_lyric){document.getElementById(`type_${i}`).value="song";document.getElementById(`id_${i}`).value=r.song_lyric.id||"";document.getElementById(`trans_${i}`).value=r.song_lyric.transposition??0;syncRow(i);}else if(r.bible_verse){pending.push(setBibleRow(i,r.bible_verse));}else if(r.custom_text){setTextRow(i,r.custom_text.name,proscholyDeltaToText(r.custom_text.content));}});await Promise.all(pending);}
 async function loadPayloadString(payloadString){
   if(payloadString.startsWith("p3.")){
